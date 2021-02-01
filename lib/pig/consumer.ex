@@ -51,6 +51,7 @@ defmodule Pig.Consumer do
       "agma"
       |> Query.new
       |> Query.with_op(:"$gte", "mem_free", ram * 1024 * 1024)
+      |> Query.with_op(:"$lt", "container_count", 255)
       |> Query.with_selector(:"$min", "container_count")
       |> Client.send_msg(msg)
     end
