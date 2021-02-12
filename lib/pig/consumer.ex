@@ -24,7 +24,7 @@ defmodule Pig.Consumer do
 
   defp process(event) do
     event
-    |> Message.parse
+    |> Message.decode
     |> inspect_ts
     |> Map.get(:payload)
     |> process_event
@@ -45,35 +45,46 @@ defmodule Pig.Consumer do
     for %App{limits: %Limits{cpu: _, ram: ram}} = app <- apps do
       # TODO: Ensure a machine exists that can process the request
       # TODO: Ensure no container name duping across machines?
-      msg = Message.create %CreateContainer{
-        apps: [app],
-      }
+      msg =
+        %CreateContainer{
+          apps: [app],
+        }
+        |> Message.create
+        |> Message.encode(json: true)
+
       "agma"
       |> Query.new
       |> Query.with_op(:"$gte", "mem_free", ram * 1024 * 1024)
       |> Query.with_op(:"$lt", "container_count", 255)
       |> Query.with_selector(:"$min", "container_count")
-      |> Client.send_msg(msg)
+      |> Client.proxy("/api/v1/create", :post, msg)
     end
   end
 
   def process_event(%ChangeContainerStatus{id: id, name: name, namespace: ns, command: cmd} = msg) do
     Logger.info "status: app: #{ns}:#{name}: sending :#{cmd}"
 
+    ns = ns || "default"
+
+    out =
+      msg
+      |> Message.create
+      |> Message.encode(json: true)
+
     "agma"
     |> Query.new
     |> Query.with_logical_op(
       :"$or",
       %{
-        "running_container_ids" => %{
-          "$contains": id
-        },
+        "path" => "/running_container_ids",
+        "op" => "$contains",
+        "to" => %{"value" => id},
       }, %{
-        "managed_container_names" => %{
-          "$contains": "#{ns}_:#{name}"
-        },
+        "path" => "/running_container_names",
+        "op" => "$contains",
+        "to" => %{"value" => "/mahou-#{ns}_#{name}"},
       }
     )
-    |> Client.send_msg(msg)
+    |> Client.proxy("/api/v1/status", :post, out)
   end
 end

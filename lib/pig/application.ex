@@ -10,7 +10,7 @@ defmodule Pig.Application do
       PigWeb.Telemetry,
       {Phoenix.PubSub, name: Pig.PubSub},
       PigWeb.Endpoint,
-    ] ++ Mahou.Singyeong.child_specs(dsn, Pig.Consumer)
+    ] ++ Mahou.Singyeong.supervisor(dsn, Pig.Consumer)
 
     opts = [strategy: :one_for_one, name: Pig.Supervisor]
     Supervisor.start_link(children, opts)
