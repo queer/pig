@@ -41,7 +41,10 @@ defmodule Pig.MixProject do
       # gun 1.3.3 needs a lower version :pensive:
       {:cowlib, "~> 2.9.0", override: true},
       {:mahou, git: "git@github.com:queer/libmahou.git"},
-      {:singyeong, git: "git@github.com:queer/singyeong-client-elixir", override: true}
+      {:singyeong, git: "git@github.com:queer/singyeong-client-elixir", override: true},
+      {:ecto, "~> 3.5"},
+      {:ecto_sql, "~> 3.5"},
+      {:postgrex, ">= 0.0.0"},
     ]
   end
 
